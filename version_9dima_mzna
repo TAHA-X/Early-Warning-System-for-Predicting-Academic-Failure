@@ -1,0 +1,158 @@
+import pandas as pd
+import os
+import tkinter as tk
+from tkinter import messagebox, ttk
+from sklearn.model_selection import train_test_split
+from sklearn.linear_model import LogisticRegression
+from sklearn.preprocessing import StandardScaler
+
+# =====================================================================
+# STEP 1 : ENTRAÎNEMENT DU MODÈLE EN ARRIÈRE-PLAN
+# =====================================================================
+if not os.path.exists('data.csv'):
+    # Message d'erreur pop-up si le fichier est manquant
+    root = tk.Tk()
+    root.withdraw()
+    messagebox.showerror("Erreur", "Le fichier 'data.csv' est introuvable dans ce dossier.")
+    exit()
+
+df_base = pd.read_csv('data.csv', sep=';')
+df_base.columns = df_base.columns.str.strip()
+
+X = df_base.drop(columns=['student_id', 'pass'])
+y = df_base['pass']
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
+
+scaler = StandardScaler()
+X_train_scaled = scaler.fit_transform(X_train)
+
+model = LogisticRegression(C=0.5, max_iter=1000, random_state=42)
+model.fit(X_train_scaled, y_train)
+
+# =====================================================================
+# STEP 2 : FONCTION DE PRÉDICTION ET SAUVEGARDE
+# =====================================================================
+def predire_etudiant():
+    try:
+        # Récupération des valeurs du formulaire
+        id_val = entry_id.get().strip()
+        att_val = float(entry_att.get())
+        hw_val = float(entry_hw.get())
+        mid_val = float(entry_mid.get())
+        hours_val = float(entry_hours.get())
+        
+        if not id_val:
+            raise ValueError("L'ID ne peut pas être vide.")
+            
+    except ValueError as e:
+        messagebox.showerror("Erreur de saisie", "Veuillez vérifier vos entrées.\nLes notes et taux doivent être des nombres.")
+        return
+
+    # Préparation et scaling pour l'IA
+    nouveau_profil = pd.DataFrame([{
+        'attendance_pct': att_val,
+        'homework_pct': hw_val,
+        'midterm_score': mid_val,
+        'study_hours_per_week': hours_val
+    }])
+    nouveau_profil_scaled = scaler.transform(nouveau_profil)
+
+    # Calcul des probabilités nuancées
+    probabilites = model.predict_proba(nouveau_profil_scaled)[0]
+    prob_reussite = probabilites[1] * 100
+    prob_echec = probabilites[0] * 100
+    prediction_finale = model.predict(nouveau_profil_scaled)[0]
+
+    # Mise à jour des résultats sur l'interface graphique
+    lbl_prob_pass.config(text=f"Probabilité de Réussite : {prob_reussite:.2f}%", fg="#1e7e34")
+    lbl_prob_fail.config(text=f"Probabilité d'Échec : {prob_echec:.2f}%", fg="#bd2130")
+
+    if prediction_finale == 1:
+        lbl_verdict.config(text="VERDICT : 🟢 RÉUSSITE (PASS)", fg="#1e7e34")
+        interpretation = "L'élève présente de bons indicateurs. Risque faible."
+    else:
+        lbl_verdict.config(text="VERDICT : 🔴 ÉCHEC (FAIL)", fg="#bd2130")
+        interpretation = "Alerte ! L'élève est en décrochage. Suivi recommandé."
+    lbl_interp.config(text=interpretation)
+
+    # Sauvegarde automatique dans etudiants.csv
+    nouvelle_ligne = pd.DataFrame([{'student_id': id_val, 'attendance_pct': att_val, 'homework_pct': hw_val, 'midterm_score': mid_val, 'study_hours_per_week': hours_val, 'pass': prediction_finale}])
+    fichier_cible = 'etudiants.csv'
+    
+    if os.path.exists(fichier_cible):
+        nouvelle_ligne.to_csv(fichier_cible, mode='a', sep=';', index=False, header=False)
+    else:
+        nouvelle_ligne.to_csv(fichier_cible, mode='w', sep=';', index=False, header=True)
+        
+    messagebox.showinfo("Succès", f"Étudiant {id_val} analysé et enregistré dans 'etudiants.csv' !")
+
+# =====================================================================
+# STEP 3 : CRÉATION DE L'INTERFACE GRAPHIQUE (TKINTER)
+# =====================================================================
+app = tk.Tk()
+app.title("Système IA - Prédiction de Réussite Scolaire")
+app.geometry("480x580")
+app.configure(bg="#f8f9fa")
+
+# Style global
+style = ttk.Style()
+style.configure("TLabel", background="#f8f9fa", font=("Arial", 10))
+style.configure("TButton", font=("Arial", 10, "bold"))
+
+# Titre principal
+title_label = tk.Label(app, text="Formulaire Étudiant & Diagnostic IA", font=("Arial", 14, "bold"), bg="#343a40", fg="white", pady=10)
+title_label.pack(fill="x",  pady=(0, 15))
+
+# Zone du formulaire (Champs de saisie)
+form_frame = tk.Frame(app, bg="#f8f9fa")
+form_frame.pack(pady=10, padx=20)
+
+fields = [
+    ("ID de l'étudiant :", "entry_id"),
+    ("Taux de présence (%) :", "entry_att"),
+    ("Devoirs rendus (%) :", "entry_hw"),
+    ("Note mi-parcours (sur 100) :", "entry_mid"),
+    ("Heures d'études / semaine :", "entry_hours")
+]
+
+entries = {}
+for i, (label_text, var_name) in enumerate(fields):
+    lbl = ttk.Label(form_frame, text=label_text)
+    lbl.grid(row=i, column=0, sticky="w", pady=8, padx=5)
+    entry = ttk.Entry(form_frame, width=25, font=("Arial", 10))
+    entry.grid(row=i, column=1, pady=8, padx=5)
+    entries[var_name] = entry
+
+# Attribution des variables de saisie pour la fonction
+entry_id = entries["entry_id"]
+entry_att = entries["entry_att"]
+entry_hw = entries["entry_hw"]
+entry_mid = entries["entry_mid"]
+entry_hours = entries["entry_hours"]
+
+# Bouton de validation
+btn_analyser = tk.Button(app, text="🚀 LANCER LE DIAGNOSTIC IA", command=predire_etudiant, bg="#007bff", fg="white", font=("Arial", 11, "bold"), padx=10, pady=5, bd=0, cursor="hand2")
+btn_analyser.pack(pady=15)
+
+# Zone d'affichage des résultats du modèle
+result_frame = tk.LabelFrame(app, text=" Résultats de l'Analyse Régression Logistique ", font=("Arial", 10, "bold"), bg="white", padx=15, pady=15, bd=1, relief="solid")
+result_frame.pack(fill="x", padx=25, pady=10)
+
+lbl_prob_pass = tk.Label(result_frame, text="Probabilité de Réussite : --", font=("Arial", 10, "bold"), bg="white")
+lbl_prob_pass.pack(anchor="w", pady=2)
+
+lbl_prob_fail = tk.Label(result_frame, text="Probabilité d'Échec : --", font=("Arial", 10, "bold"), bg="white")
+lbl_prob_fail.pack(anchor="w", pady=2)
+
+divider = tk.Frame(result_frame, height=1, bg="#dee2e6")
+divider.pack(fill="x", pady=8)
+
+lbl_verdict = tk.Label(result_frame, text="VERDICT : Waiting...", font=("Arial", 11, "bold"), bg="white", fg="#6c757d")
+lbl_verdict.pack(anchor="w", pady=2)
+
+lbl_interp = tk.Label(result_frame, text="Veuillez remplir le formulaire pour voir l'interprétation.", font=("Arial", 9, "italic"), bg="white", fg="#6c757d", wraplength=380, justify="left")
+lbl_interp.pack(anchor="w", pady=5)
+
+# Lancement de la fenêtre de l'application
+app.mainloop()
