@@ -1,60 +1,102 @@
-# 🎓 Early Warning System (EWS) - Pilotage de la Réussite Académique
+# 🎓 Système de Détection Préventive & Diagnostic du Décrochage Scolaire
 
-L'**Early Warning System (EWS)** est une application web d'aide à la décision et de diagnostic prédictif conçue pour les administrations universitaires. Grâce à une approche hybride combinant la puissance de l'**Intelligence Artificielle** (Machine Learning) et la clarté d'un **système de diagnostic métier**, EWS permet de détecter en amont les étudiants à risque de décrochage ou d'échec scolaire.
+Ce projet est une solution complète d'aide à la décision pour les établissements scolaires. Il combine l'analyse de données, le **Machine Learning** pour le calcul du risque d'échec, et une architecture moderne **API-First** (FastAPI) connectée à un **Dashboard interactif** (Streamlit). Le système permet de détecter de manière proactive les élèves en situation de décrochage afin de planifier des actions correctives.
+
+## 🔥 Fonctionnalités Principales
+
+* **Mode API-First :** Séparation stricte entre le moteur d'intelligence artificielle (FastAPI) et l'interface utilisateur.
+* **Importation Dynamique :** Possibilité d'importer directement de nouveaux fichiers de données (`.xlsx`, `.xls`, `.txt`) pour mettre à jour la base ou remplacer complètement le fichier existant.
+* **Analyse Descriptive Globale :** Statistiques en temps réel sur la promotion (moyenne des absences, notes de mi-parcours, distributions graphiques).
+* **Formulaire de Diagnostic à la Volée :** Interface interactive pour simuler ou inscrire un nouvel étudiant en saisissant ses notes par matière et son comportement.
+* **Cellule d'Alerte IA :** Identification automatique et instantanée des profils à risque avec calcul de la probabilité d'échec exacte (%).
+* **Fiches de Diagnostic Détaillées :** Analyse sectorielle par étudiant mettant en avant les facteurs métiers déclencheurs transmis par l'API (matières critiques, manque d'implication, absentéisme).
+
+
+
+## 📸 Aperçu du Dashboard (Interface Utilisateur)
+
+### 📊 Page 1 : Statistiques Globales & Importation
+Cette première page permet de charger de nouvelles données au format Excel ou texte pour enrichir la base de l'API. Elle affiche instantanément les indicateurs clés de la promotion (KPIs) ainsi que les graphiques de distribution.
+
+<img width="1552" height="847" alt="dash1" src="https://github.com/user-attachments/assets/125fbe26-0bc1-4a1b-b087-8ba5557e5196" />
+
+
+*Figure 1 : Première page du dashboard avec module d'importation et graphiques descriptifs.*
 
 ---
 
-## 🚀 Architecture Globale du Projet
+### 📝 Page 2 : Assistant de Diagnostic & Inscription
+Cette interface contient un formulaire dynamique composé de curseurs (sliders) permettant de saisir le comportement (présence, devoirs rendus, heures d'étude) et les notes par matière d'un étudiant pour l'enregistrer et interroger l'API en direct.
 
-Le projet repose sur une architecture découplée et unifiée :
-1. **La Base de Données Globale (`data.csv` & `etudiants.csv`)** : Séparation stricte entre les données historiques d'entraînement (`data.csv`) et la base des étudiants actifs inscrits au cours de l'année (`etudiants.csv`).
-2. **Le Moteur Prédictif (FastAPI)** : Une API REST intégrée qui charge un modèle de **Régression Logistique** (scikit-learn) entraîné avec un équilibrage des classes (`class_weight='balanced'`) pour évaluer scientifiquement le risque.
-3. **L'Interface Utilisateur (Streamlit)** : Un tableau de bord moderne, interactif et multi-pages structuré en 3 espaces de navigation.
+<img width="1740" height="813" alt="dash2" src="https://github.com/user-attachments/assets/b4a39a9c-7fc6-48d8-8834-6824a00f94cb" />
+
+
+*Figure 2 : Formulaire de simulation et d'inscription d'un nouvel étudiant (Mode API).*
 
 ---
 
-## 🛠️ Fonctionnalités Clés & Aperçu de l'Interface
+### 🚨 Page 3 : Cellule de Détection Préventive (Vue d'ensemble)
+Cette section liste de manière épurée l'ensemble des profils jugés "défaillants" par le modèle prédictif. Le tableau met en évidence l'ID de l'étudiant, sa probabilité d'échec précise et son volume d'absences.
 
-L'interface Streamlit est segmentée en trois volets décisionnels majeurs :
-
-### 1. 📊 Tableau de Bord des Étudiants Inscrits
-* **Analyse Descriptive** : Calcul en direct des indicateurs macro de la promotion (Effectif total, moyenne des absences, moyenne générale de mi-parcours) à partir du fichier de suivi administratif `etudiants.csv`.
-* **Visualisations Dynamiques** : Graphiques interactifs affichant la distribution des absences et la corrélation entre le volume d'étude hebdomadaire et les notes obtenues.
-
-![Aperçu du Tableau de Bord Statistique]
-
-<img width="1822" height="870" alt="im1" src="https://github.com/user-attachments/assets/9a011af1-8398-4fb5-aefb-06a114e13db0" />
+<img width="1578" height="853" alt="dash3" src="https://github.com/user-attachments/assets/3e636d83-1619-484a-8a81-d862ec01867c" />
 
 
-### 2. 🤖 Assistant de Diagnostic & Inscription
-* **Sécurité Anti-Doublon Stricte** : Algorithme de vérification instantanée lors de la soumission. Si l'ID de l'étudiant existe déjà dans la base, le système bloque l'enregistrement pour préserver l'intégrité des données.
-* **Évaluation Hybride** : L'IA détient le pouvoir décisionnel exclusif (`PASS` ou `FAIL`) en analysant de manière non linéaire les données comportementales. Si le modèle prédit un échec, le système applique un filtre de diagnostic déterministe pour lister l'ensemble complet des causes comportementales et des matières défaillantes (Note < 50/100).
+*Figure 3 : Tableau récapitulatif des profils à risque identifiés par l'IA.*
 
-![Formulaire d'Inscription et de Diagnostic]
+---
 
-<img width="1482" height="780" alt="img2" src="https://github.com/user-attachments/assets/9c8f8cbc-5ad7-4189-874f-834a70757c83" />
+### 📉 Page 3 : Analyse Sectorielle des Matières Critiques
+Directement sous le tableau de la page 3, un graphique en barres permet d'identifier visuellement quelles sont les matières qui mettent le plus la promotion en péril (nombre d'étudiants en situation d'échec par bloc d'enseignement).
 
-
-### 3. 🚨 Cellule de Détection Préventive (Risques & Matières)
-* **Détection Globale en Masse** : Scan complet du fichier administratif `etudiants.csv` à l'aide du modèle prédictif pour extraire instantanément et isoler la liste de tous les profils en danger avec leur probabilité d'échec exacte.
-* **Identification Sectorielle des Matières** : Repérage automatique, pour chaque étudiant en échec, des matières spécifiques en dessous du seuil critique (notes < 50/100), complété par un graphique à barres global mettant en évidence les enseignements qui mettent la promotion en péril.
-
-![Cellule de Détection Préventive - Liste des Profils]
-
-<img width="1503" height="881" alt="img3" src="https://github.com/user-attachments/assets/69fd7f4d-c11d-4723-80f0-48696836653b" />
+<img width="1573" height="688" alt="dash4" src="https://github.com/user-attachments/assets/0d3397d4-8860-4927-931d-6b763fbbd47e" />
 
 
-![Analyse Sectorielle des Matières à Risque]
+*Figure 4 : Statistiques sous format de graphe identifiant les matières critiques de la promotion.*
 
-<img width="1455" height="697" alt="img4" src="https://github.com/user-attachments/assets/cb528234-08b0-4140-a0c3-a3b6ceba99ed" />
+---
+
+### 🔍 Focus : Fiche de Diagnostic Détaillée (Pop-up API)
+Lorsqu'on inspecte un profil critique spécifique, l'API transmet une fiche complète. En plus des notes, elle explicite clairement les **facteurs métiers déclencheurs** (ex: volume d'absences trop élevé, matière critique affectant le score).
+
+<img width="1247" height="837" alt="dash5" src="https://github.com/user-attachments/assets/58ad06da-e8f5-4943-9a12-eb17c927d596" />
 
 
-## 📦 Installation et Lancement du Projet
+*Figure 5 : Fenêtre de détails explicitant les causes du danger de décrochage pour un profil ciblé.*
 
-### Prérequis
-* Python 3.10 ou supérieur
+---
 
-### 1. Installation des dépendances
-Ouvrez votre terminal et installez les bibliothèques requises :
-```bash
-pip install fastapi uvicorn pandas scikit-learn streamlit plotly requests
+## 🛠️ Architecture Technique
+
+Le projet est découpé en deux composants autonomes communicant par requêtes HTTP (JSON) :
+
+1. **Le Backend (API) :** Développé avec **FastAPI**. Il charge le modèle de Machine Learning préalablement entraîné (`Random Forest` / `Scikit-Learn`), valide les données entrantes avec `Pydantic` et effectue les prédictions de probabilité d'échec en tâche de fond.
+2. **Le Frontend (Dashboard) :** Développé en **Streamlit**. Il offre une interface fluide et moderne, interroge l'API pour chaque calcul et s'occupe de la visualisation de données (`Plotly` / `Altair`).
+
+---
+
+## 🚀 Installation et Lancement
+
+### 1. Prérequis & Installation des dépendances
+Clonez le projet, créez un environnement virtuel, puis installez les bibliothèques requises :
+
+pip install -r requirements.txt
+(Le fichier requirements.txt doit inclure : fastapi, uvicorn, streamlit, pandas, scikit-learn, pydantic, requests, plotly).
+
+2. Entraînement du modèle initial
+Avant de lancer les serveurs, exécutez le script d'entraînement pour générer le modèle prédictif basé sur l'historique :
+
+
+python code.py
+3. Lancement de l'API (Backend)
+Démarrez le serveur FastAPI sur le port par défaut (8000) :
+
+
+uvicorn main:app --reload
+La documentation interactive de l'API reste accessible sur http://127.0.0.1:8000/docs.
+
+4. Lancement du Dashboard (Frontend)
+Dans un autre terminal, lancez l'interface Streamlit :
+
+streamlit run app.py
+## 👥 Équipe de Développement
+### Taha ECHCHOUAL & Asmae HADOUCH
