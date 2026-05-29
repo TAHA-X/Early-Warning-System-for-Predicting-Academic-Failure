@@ -16,7 +16,6 @@ if not os.path.exists('data.csv'):
 df_base = pd.read_csv('data.csv', sep=';')
 df_base.columns = df_base.columns.str.strip()
 
-# L'IA s'entraîne uniquement sur les 5 critères de base
 criteres_ia = ['attendance_pct', 'absence_hours', 'homework_pct', 'study_hours_per_week', 'midterm_score']
 X = df_base[criteres_ia]
 y = df_base['pass']
@@ -26,7 +25,6 @@ X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
 
-# Utilisation de l'équilibrage des classes pour une détection fine du FAIL
 model = LogisticRegression(class_weight='balanced', C=1.0, max_iter=1000, random_state=42)
 model.fit(X_train_scaled, y_train)
 
@@ -52,11 +50,10 @@ class StudentInput(BaseModel):
     arabe: float
 
 # =====================================================================
-# STEP 3 : LOGIQUE DE DIAGNOSTIC (LISTE COMPLÈTE SANS FILTRE)
+# STEP 3 : LOGIQUE DE DIAGNOSTIC
 # =====================================================================
 @app.post("/predict")
 def predict_student_status(student: StudentInput):
-    
     donnees_ia = pd.DataFrame([{
         'attendance_pct': student.attendance_pct,
         'absence_hours': student.absence_hours,
@@ -75,26 +72,18 @@ def predict_student_status(student: StudentInput):
     verdict = "PASS" if prediction_finale == 1 else "FAIL"
     raisons_echec = []
     
-    # Si l'IA détecte un FAIL, on liste TOUTES les raisons sans exception
     if verdict == "FAIL":
-        
-        # A. Vérification de TOUS les critères comportementaux défaillants
         if student.absence_hours > 20:
             raisons_echec.append(f"Volume d'absences trop élevé ({student.absence_hours} heures)")
-            
         if student.attendance_pct < 75:
             raisons_echec.append(f"Taux de présence globale insuffisant ({student.attendance_pct}%)")
-            
         if student.homework_pct < 65:
             raisons_echec.append(f"Manque d'implication dans les devoirs rendus ({student.homework_pct}%)")
-            
         if student.study_hours_per_week < 6:
             raisons_echec.append(f"Temps d'étude hebdomadaire trop faible ({student.study_hours_per_week} heures)")
-            
         if student.midterm_score < 60:
             raisons_echec.append(f"Score global aux examens de mi-parcours insuffisant ({student.midterm_score}/100)")
 
-        # B. Vérification de TOUTES les matières en dessous de 50
         matieres = {
             "Informatique": student.informatique, "Mathématiques": student.mathematique,
             "SVT": student.svt, "Physique": student.physique, "Sport": student.sport,
