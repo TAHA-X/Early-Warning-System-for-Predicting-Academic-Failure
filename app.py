@@ -5,82 +5,34 @@ import plotly.express as px
 import os
 import threading
 import time
-from fastapi import FastAPI
-from pydantic import BaseModel
-import uvicorn
-from sklearn.model_selection import train_test_split
-from sklearn.linear_model import LogisticRegression
-from sklearn.preprocessing import StandardScaler
 
-# INITIALISATION ET ENTRAÎNEMENT DE L'IA EN LOCAL
-TRAIN_FILE = "data.csv"
 DATA_FILE = "etudiants.csv"
 API_URL = "http://127.0.0.1:8000/predict"
 
-if not os.path.exists(TRAIN_FILE):
-    st.error(f"❌ Le fichier critique `{TRAIN_FILE}` est introuvable. L'IA ne peut pas s'entraîner.")
-    st.stop()
-
-df_base = pd.read_csv(TRAIN_FILE, sep=';')
-df_base.columns = df_base.columns.str.strip()
-
-criteres_ia = ['attendance_pct', 'absence_hours', 'homework_pct', 'study_hours_per_week', 'midterm_score']
-X = df_base[criteres_ia]
-y = df_base['pass']
-
-X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-
-model = LogisticRegression(class_weight='balanced', C=1.0, max_iter=1000, random_state=42)
-model.fit(X_train_scaled, y_train)
-
-# CONFIGURATION DE L'API REST INTERNE
-app_internal = FastAPI(title="Early Warning System - API Internal")
-
-class StudentInput(BaseModel):
-    student_id: str
-    attendance_pct: float
-    absence_hours: float
-    homework_pct: float
-    study_hours_per_week: float
-    midterm_score: float
-    informatique: float
-    mathematique: float
-    svt: float
-    physique: float
-    sport: float
-    education_islamique: float
-    francais: float
-    arabe: float
-
-@app_internal.post("/predict")
-def predict_student_status(student: StudentInput):
-    # Appel de la même logique que code.py pour rester synchronisé
-    from code import predict_student_status as real_predict
-    return real_predict(student)
-
+# Gestion automatique de l'allumage de l'API en arrière-plan
 def run_fastapi():
+    import uvicorn
     uvicorn.run("code:app", host="127.0.0.1", port=8000, log_level="warning")
 
 if "fastapi_started" not in st.session_state:
     threading.Thread(target=run_fastapi, daemon=True).start()
     st.session_state["fastapi_started"] = True
-    time.sleep(1)
+    time.sleep(1.5)  # Temps d'attente initialisation du port
 
-# INTERFACE UTILISATEUR STREAMLIT
 st.set_page_config(page_title="EWS - Early Warning System", page_icon="🎓", layout="wide")
 
-st.sidebar.title("📌 Navigation")
+st.sidebar.title("Taha ECHCHOUAL && Asmae HADOUCH - ML/DL")
+st.sidebar.badge("encadré par prof : mohammadi")
 page = st.sidebar.radio("Aller vers :", ["📊 Statistiques Globales", "🤖 Diagnostic & Inscription", "🚨 Cellule d'Alerte & Risques"])
 
+# =====================================================================
 # PAGE 1 : STATISTIQUES GLOBALES
+# =====================================================================
 if page == "📊 Statistiques Globales":
     st.title("📊 Tableau de Bord des Étudiants Inscrits")
-    st.write("Analyse descriptive de la promotion actuelle issue de `etudiants.csv`.")
+    st.write("Analyse descriptive de la promotion actuelle issue de `etudiants.csv` via l'API.")
     st.divider()
 
-    # SECTION IMPORTATION DE FICHIER HÉBERGÉ
     st.markdown("### 📥 Importation de données externes (.xlsx, .xls, .txt)")
     col_file, col_opt = st.columns([2, 1])
     
@@ -97,52 +49,46 @@ if page == "📊 Statistiques Globales":
                 df_imported = pd.read_excel(uploaded_file)
             
             df_imported.columns = df_imported.columns.str.strip()
-            
-            # Les colonnes que l'administration doit obligatoirement fournir
             colonnes_requises = ['student_id', 'attendance_pct', 'absence_hours', 'homework_pct', 'study_hours_per_week', 'midterm_score']
             
             if not all(col in df_imported.columns for col in colonnes_requises):
                 st.error("🚨 Erreur : Le fichier doit contenir au moins les colonnes comportementales de base.")
             else:
-                if st.button("Confirmer l'importation & Évaluation Automatique 💾", type="primary"):
-                    with st.spinner("L'IA calcule les prédictions pour les profils importés..."):
+                if st.button("Confirmer l'importation & Évaluation Automatique API 💾", type="primary"):
+                    with st.spinner("L'API calcule les prédictions par lot..."):
+                        df_imported = df_imported.dropna(subset=colonnes_requises).fillna(0)
                         
-                        # 1. Nettoyage strict des lignes complètement vides
-                        df_imported = df_imported.dropna(subset=colonnes_requises)
-                        
-                        # 2. Remplacement des valeurs manquantes (NaN) par 0 pour éviter le crash du modèle
-                        df_imported = df_imported.fillna(0)
-
-                        # 3. Évaluation automatique par lot via le modèle entraîné
-                        X_imp = df_imported[criteres_ia]
-                        X_imp_scaled = scaler.transform(X_imp)
-                        
-                        # Génération dynamique de la colonne pass (0 ou 1)
-                        df_imported['pass'] = model.predict(X_imp_scaled)
-                        
-                        # Garantir l'ordre idéal des colonnes pour correspondre à etudiants.csv
                         ordre_cols = ['student_id', 'attendance_pct', 'absence_hours', 'homework_pct', 
                                       'study_hours_per_week', 'midterm_score', 'informatique', 'mathematique', 
-                                      'svt', 'physique', 'sport', 'education_islamique', 'francais', 'arabe', 'pass']
+                                      'svt', 'physique', 'sport', 'education_islamique', 'francais', 'arabe']
+                        for c in ordre_cols:
+                            if c not in df_imported.columns:
+                                df_imported[c] = 0.0
+
+                        liste_pass = []
+                        for _, row in df_imported.iterrows():
+                            payload = row.to_dict()
+                            payload['student_id'] = str(payload['student_id'])
+                            try:
+                                res = requests.post(API_URL, json=payload).json()
+                                valeur_pass = res.get('pass_binary', res.get('pass', 0))
+                                liste_pass.append(valeur_pass)
+                            except:
+                                liste_pass.append(0)
                         
-                        # Ajouter les colonnes de matières manquantes si elles n'existent pas dans l'import
-                        for col_mat in ordre_cols:
-                            if col_mat not in df_imported.columns:
-                                df_imported[col_mat] = 0.0
-                                
+                        df_imported['pass'] = liste_pass
+                        ordre_cols.append('pass')
                         df_imported = df_imported[ordre_cols]
 
-                        # 4. Sauvegarde physique
                         if import_mode == "Remplacer complètement le fichier" or not os.path.exists(DATA_FILE):
                             df_imported.to_csv(DATA_FILE, index=False, sep=';')
-                            st.success("🎯 Fichier étudiant initialisé et entièrement calculé par l'IA !")
+                            st.success("🎯 Fichier étudiant initialisé avec succès !")
                         else:
                             df_existing = pd.read_csv(DATA_FILE, sep=';')
                             df_existing.columns = df_existing.columns.str.strip()
                             df_final = pd.concat([df_existing, df_imported]).drop_duplicates(subset=['student_id'], keep='last')
                             df_final.to_csv(DATA_FILE, index=False, sep=';')
-                            st.success("➕ Nouveaux profils évalués par l'IA et insérés sans doublons !")
-                        
+                            st.success("➕ Nouveaux profils insérés proprement sans doublons !")
                         time.sleep(1)
                         st.rerun()
         except Exception as e:
@@ -170,9 +116,11 @@ if page == "📊 Statistiques Globales":
     else:
         st.info("💡 Aucun étudiant enregistré.")
 
+# =====================================================================
 # PAGE 2 : DIAGNOSTIC & INSCRIPTION UNITAIRE
+# =====================================================================
 elif page == "🤖 Diagnostic & Inscription":
-    st.title("🤖 Assistant de Diagnostic & Inscription")
+    st.title("🤖 Assistant de Diagnostic & Inscription (Mode API)")
     st.divider()
 
     with st.form("student_form"):
@@ -212,8 +160,7 @@ elif page == "🤖 Diagnostic & Inscription":
                     df_lecture = pd.read_csv(DATA_FILE, sep=';')
                     if student_id in df_lecture.iloc[:, 0].astype(str).str.strip().tolist():
                         id_deja_existe = True
-                except Exception:
-                    pass
+                except: pass
 
             if id_deja_existe:
                 st.error(f"🚨 REFUSÉ : L'ID **{student_id}** est déjà enregistré.")
@@ -231,35 +178,36 @@ elif page == "🤖 Diagnostic & Inscription":
                     response = requests.post(API_URL, json=payload)
                     if response.status_code == 200:
                         res = response.json()
+                        payload['pass'] = res.get('pass_binary', 0)
                         
-                        # Ajouter le tag binaire pass calculé par l'API pour le stockage csv
-                        payload['pass'] = 1 if res["prediction_ia"] == "PASS" else 0
                         nouvel_etudiant = pd.DataFrame([payload])
-                        
                         if os.path.exists(DATA_FILE):
                             nouvel_etudiant.to_csv(DATA_FILE, mode='a', header=False, index=False, sep=';')
                         else:
                             nouvel_etudiant.to_csv(DATA_FILE, mode='w', header=True, index=False, sep=';')
                         
-                        @st.dialog("📋 Rapport de Diagnostic Réalisé", width="large")
+                        @st.dialog("📋 Rapport de Diagnostic Réalisé par l'API", width="large")
                         def afficher_popup():
                             st.write(f"**Étudiant ID :** {student_id}")
                             st.success("💾 Enregistré avec succès dans `etudiants.csv`.")
-                            if res["prediction_ia"] == "PASS":
-                                st.success(f"🎉 **Verdict IA : PASS** (Probabilité : {res['probabilite_reussite']})")
+                            if res.get("prediction_ia") == "PASS":
+                                st.success(f"🎉 **Verdict IA : PASS** (Probabilité : {res.get('probabilite_reussite')})")
                                 st.balloons()
                             else:
-                                st.error(f"🚨 **Verdict IA : FAIL** (Probabilité : {res['probabilite_echec']})")
-                                for motif in res["diagnostic_administration"]["motifs_du_danger"]:
+                                st.error(f"🚨 **Verdict IA : FAIL** (Probabilité : {res.get('probabilite_echec')})")
+                                st.write("**Liste complète des motifs identifiés simultanément :**")
+                                for motif in res.get("diagnostic_administration", {}).get("motifs_du_danger", []):
                                     st.write(f"- {motif}")
                             if st.button("Fermer"): st.rerun()
                         afficher_popup()
-                except Exception:
-                    st.error("❌ Erreur de communication avec le moteur d'analyse.")
+                except Exception as e:
+                    st.error(f"❌ Erreur de communication avec l'API : {e}")
 
-# PAGE 3 : CELLULE D'ALERTE
+# =====================================================================
+# PAGE 3 : CELLULE D'ALERTE & RISQUES (CORRIGÉE POUR LE BUG DU 0.0%)
+# =====================================================================
 elif page == "🚨 Cellule d'Alerte & Risques":
-    st.title("🚨 Cellule de Détection Préventive")
+    st.title("🚨 Cellule de Détection Préventive (Données issues de l'API)")
     st.divider()
 
     if os.path.exists(DATA_FILE):
@@ -269,18 +217,38 @@ elif page == "🚨 Cellule d'Alerte & Risques":
         if df_students.empty:
             st.info("💡 Aucun étudiant enregistré dans `etudiants.csv`.")
         else:
-            X_eval = df_students[criteres_ia]
-            X_eval_scaled = scaler.transform(X_eval)
-            df_students['Prediction_Code'] = model.predict(X_eval_scaled)
-            df_students['Risque_%'] = (model.predict_proba(X_eval_scaled)[:, 0] * 100).round(2)
-            
-            # Profils à risque (FAIL = Code 0)
-            df_en_danger = df_students[df_students['Prediction_Code'] == 0].copy()
+            with st.spinner("Analyse globale de la promotion via l'API en cours..."):
+                liste_danger = []
+                
+                for _, row in df_students.iterrows():
+                    payload = row.to_dict()
+                    payload['student_id'] = str(payload['student_id'])
+                    try:
+                        res_api = requests.post(API_URL, json=payload).json()
+                        
+                        if res_api.get('prediction_ia') == "FAIL":
+                            # BLINDAGE ANTI-BUG : Extraction du vrai float
+                            if 'risque_valeur' in res_api and float(res_api['risque_valeur']) > 0:
+                                risque = float(res_api['risque_valeur'])
+                            else:
+                                # Secours si la clé numérique a échoué : on nettoie la clé texte "XX.XX%"
+                                str_pct = res_api.get('probabilite_echec', '0.0%')
+                                risque = float(str_pct.replace('%', '').strip())
+                            
+                            payload['Risque_%'] = risque
+                            payload['Motifs_List'] = res_api.get('diagnostic_administration', {}).get('motifs_du_danger', [])
+                            liste_danger.append(payload)
+                    except:
+                        pass
+                
+                if liste_danger:
+                    df_en_danger = pd.DataFrame(liste_danger)
+                else:
+                    df_en_danger = pd.DataFrame(columns=df_students.columns.tolist() + ['Risque_%', 'Motifs_List'])
 
             col_a1, col_a2 = st.columns(2)
-            col_a1.metric("Total étudiants analysés", len(df_students))
+            col_a1.metric("Total étudiants inscrits", len(df_students))
             col_a2.metric("🎯 Profils À RISQUE (IA)", len(df_en_danger), delta=f"{len(df_en_danger)} à suivre", delta_color="inverse")
-
             st.divider()
             
             if df_en_danger.empty:
@@ -288,19 +256,20 @@ elif page == "🚨 Cellule d'Alerte & Risques":
             else:
                 st.markdown("### 📋 Liste épurée des profils défaillants")
                 df_tableau_epure = df_en_danger[['student_id', 'Risque_%', 'absence_hours']].copy()
-                df_tableau_epure.columns = ['ID Étudiant', 'Probabilité Échec', 'Heures Absences']
-                st.dataframe(df_tableau_epure.style.set_properties(**{'background-color': '#fdf2f2', 'color': '#9b1c1c'}, subset=['Probabilité Échec']), use_container_width=True)
+                df_tableau_epure.columns = ['ID Étudiant', 'Probabilité Échec (%)', 'Heures Absences']
+                st.dataframe(df_tableau_epure.style.set_properties(**{'background-color': '#fdf2f2', 'color': '#9b1c1c'}, subset=['Probabilité Échec (%)']), use_container_width=True)
                 
                 st.divider()
-                
                 st.markdown("### 🔍 Inspecter un profil critique en détail")
                 liste_ids_danger = df_en_danger['student_id'].astype(str).tolist()
                 id_selectionne = st.selectbox("Sélectionnez l'ID de l'étudiant à inspecter :", options=liste_ids_danger)
                 
-                @st.dialog("🔬 Fiche Diagnostic Détaillée - Cellule d'Alerte", width="large")
+                @st.dialog("🔬 Fiche Diagnostic Détaillée (Générée par l'API)", width="large")
                 def popup_details(student_id_target):
                     row_student = df_en_danger[df_en_danger['student_id'].astype(str) == student_id_target].iloc[0]
                     st.markdown(f"## 👤 Étudiant ID : `{student_id_target}`")
+                    
+                    # AFFICHAGE DU VRAI POURCENTAGE EXTRAIT
                     st.error(f"🚨 **Probabilité de Décrochage / Échec : {row_student['Risque_%']}%**")
                     st.divider()
                     
@@ -323,54 +292,26 @@ elif page == "🚨 Cellule d'Alerte & Risques":
                         st.write(f"🔹 **Arabe :** {row_student['arabe']}/100")
                     
                     st.divider()
-                    st.markdown("### 🎯 Facteurs métiers déclencheurs de l'alerte :")
-                    motifs = []
-                    if row_student['absence_hours'] > 20: motifs.append(f"• Volume d'absences critique ({row_student['absence_hours']}h)")
-                    if row_student['attendance_pct'] < 75: motifs.append(f"• Taux de présence insuffisant ({row_student['attendance_pct']}%)")
-                    if row_student['homework_pct'] < 65: motifs.append(f"• Retards répétés sur les devoirs rendus ({row_student['homework_pct']}%)")
-                    if row_student['study_hours_per_week'] < 6: motifs.append(f"• Temps d'étude personnel trop faible ({row_student['study_hours_per_week']}h/semaine)")
-                    if row_student['midterm_score'] < 60: motifs.append(f"• Note globale aux examens d'alerte ({row_student['midterm_score']}/100)")
-                    
-                    matieres_list = {"Informatique": row_student['informatique'], "Mathématiques": row_student['mathematique'], "SVT": row_student['svt'], "Physique": row_student['physique'], "Français": row_student['francais'], "Arabe": row_student['arabe'], "Sport": row_student['sport'], "Éducation Islamique": row_student['education_islamique']}
-                    for k, v in matieres_list.items():
-                        if v < 50: motifs.append(f"• Insuffisance académique majeure en **{k}** ({v}/100)")
-                    
-                    if motifs:
-                        for m in motifs: st.write(m)
-                    else:
-                        st.write("• Échec comportemental global déterminé par l'IA.")
+                    st.markdown("### 🎯 Facteurs métiers déclencheurs transmis par l'API :")
+                    for m in row_student['Motifs_List']:
+                        st.write(f"• {m}")
                         
                     if st.button("Fermer la fiche"): st.rerun()
 
                 if st.button("Afficher la Fiche d'Alerte Complète 🔍", type="primary"):
                     popup_details(id_selectionne)
 
-                # =====================================================================
-                # ANALYSE SECTORIELLE (SYNCHRONISATION DES ACCENTS VALIDE)
-                # =====================================================================
                 st.divider()
-                
                 total_defaillances_matieres = {
-                    "Informatique": 0,
-                    "Mathématiques": 0,
-                    "SVT": 0,
-                    "Physique": 0,
-                    "Sport": 0,
-                    "Éducation Islamique": 0,
-                    "Français": 0,
-                    "Arabe": 0
+                    "Informatique": 0, "Mathématiques": 0, "SVT": 0, "Physique": 0,
+                    "Sport": 0, "Éducation Islamique": 0, "Français": 0, "Arabe": 0
                 }
                 
                 for _, row in df_en_danger.iterrows():
                     matieres = {
-                        "Informatique": row['informatique'], 
-                        "Mathématiques": row['mathematique'], 
-                        "SVT": row['svt'], 
-                        "Physique": row['physique'], 
-                        "Sport": row['sport'], 
-                        "Éducation Islamique": row['education_islamique'], 
-                        "Français": row['francais'], 
-                        "Arabe": row['arabe']
+                        "Informatique": row['informatique'], "Mathématiques": row['mathematique'], 
+                        "SVT": row['svt'], "Physique": row['physique'], "Sport": row['sport'], 
+                        "Éducation Islamique": row['education_islamique'], "Français": row['francais'], "Arabe": row['arabe']
                     }
                     for nom, note in matieres.items():
                         if note < 50: 
