@@ -99,4 +99,4 @@ Dans un autre terminal, lancez l'interface Streamlit :
 
 streamlit run app.py
 ## 👥 Équipe de Développement
-### Taha ECHCHOUAL & Asmae HADOUCH
+### Asmae HADOUCH & Taha ECHCHOUAL 
