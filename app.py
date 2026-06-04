@@ -1,3 +1,8 @@
+
+
+
+# ... (le reste de votre code app.py actuel)
+
 import streamlit as st
 import requests
 import pandas as pd
@@ -46,9 +51,13 @@ if page == "📊 Statistiques Globales":
             if uploaded_file.name.endswith('.txt'):
                 df_imported = pd.read_csv(uploaded_file, sep=';')
             else:
-                df_imported = pd.read_excel(uploaded_file)
+                # FIXED: Force string data type for student_id columns to avoid conversion anomalies
+                df_imported = pd.read_excel(uploaded_file, dtype={'student_id': str})
             
             df_imported.columns = df_imported.columns.str.strip()
+            if 'student_id' in df_imported.columns:
+                df_imported['student_id'] = df_imported['student_id'].astype(str).str.strip()
+                
             colonnes_requises = ['student_id', 'attendance_pct', 'absence_hours', 'homework_pct', 'study_hours_per_week', 'midterm_score']
             
             if not all(col in df_imported.columns for col in colonnes_requises):
@@ -84,7 +93,7 @@ if page == "📊 Statistiques Globales":
                             df_imported.to_csv(DATA_FILE, index=False, sep=';')
                             st.success("🎯 Fichier étudiant initialisé avec succès !")
                         else:
-                            df_existing = pd.read_csv(DATA_FILE, sep=';')
+                            df_existing = pd.read_csv(DATA_FILE, sep=';', dtype={'student_id': str})
                             df_existing.columns = df_existing.columns.str.strip()
                             df_final = pd.concat([df_existing, df_imported]).drop_duplicates(subset=['student_id'], keep='last')
                             df_final.to_csv(DATA_FILE, index=False, sep=';')
@@ -97,7 +106,7 @@ if page == "📊 Statistiques Globales":
     st.divider()
 
     if os.path.exists(DATA_FILE):
-        df = pd.read_csv(DATA_FILE, sep=';')
+        df = pd.read_csv(DATA_FILE, sep=';', dtype={'student_id': str})
         df.columns = df.columns.str.strip()
         if not df.empty:
             col_m1, col_m2, col_m3 = st.columns(3)
@@ -157,7 +166,7 @@ elif page == "🤖 Diagnostic & Inscription":
             id_deja_existe = False
             if os.path.exists(DATA_FILE):
                 try:
-                    df_lecture = pd.read_csv(DATA_FILE, sep=';')
+                    df_lecture = pd.read_csv(DATA_FILE, sep=';', dtype={'student_id': str})
                     if student_id in df_lecture.iloc[:, 0].astype(str).str.strip().tolist():
                         id_deja_existe = True
                 except: pass
@@ -204,14 +213,14 @@ elif page == "🤖 Diagnostic & Inscription":
                     st.error(f"❌ Erreur de communication avec l'API : {e}")
 
 # =====================================================================
-# PAGE 3 : CELLULE D'ALERTE & RISQUES (CORRIGÉE POUR LE BUG DU 0.0%)
+# PAGE 3 : CELLULE D'ALERTE & RISQUES
 # =====================================================================
 elif page == "🚨 Cellule d'Alerte & Risques":
     st.title("🚨 Cellule de Détection Préventive (Données issues de l'API)")
     st.divider()
 
     if os.path.exists(DATA_FILE):
-        df_students = pd.read_csv(DATA_FILE, sep=';')
+        df_students = pd.read_csv(DATA_FILE, sep=';', dtype={'student_id': str})
         df_students.columns = df_students.columns.str.strip()
 
         if df_students.empty:
@@ -225,13 +234,10 @@ elif page == "🚨 Cellule d'Alerte & Risques":
                     payload['student_id'] = str(payload['student_id'])
                     try:
                         res_api = requests.post(API_URL, json=payload).json()
-                        
                         if res_api.get('prediction_ia') == "FAIL":
-                            # BLINDAGE ANTI-BUG : Extraction du vrai float
                             if 'risque_valeur' in res_api and float(res_api['risque_valeur']) > 0:
                                 risque = float(res_api['risque_valeur'])
                             else:
-                                # Secours si la clé numérique a échoué : on nettoie la clé texte "XX.XX%"
                                 str_pct = res_api.get('probabilite_echec', '0.0%')
                                 risque = float(str_pct.replace('%', '').strip())
                             
@@ -268,8 +274,6 @@ elif page == "🚨 Cellule d'Alerte & Risques":
                 def popup_details(student_id_target):
                     row_student = df_en_danger[df_en_danger['student_id'].astype(str) == student_id_target].iloc[0]
                     st.markdown(f"## 👤 Étudiant ID : `{student_id_target}`")
-                    
-                    # AFFICHAGE DU VRAI POURCENTAGE EXTRAIT
                     st.error(f"🚨 **Probabilité de Décrochage / Échec : {row_student['Risque_%']}%**")
                     st.divider()
                     

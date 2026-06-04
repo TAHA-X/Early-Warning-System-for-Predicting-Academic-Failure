@@ -1,34 +1,95 @@
 from fastapi import FastAPI
 from pydantic import BaseModel
 import pandas as pd
+import numpy as np
 import os
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, cross_validate
 from sklearn.linear_model import LogisticRegression
 from sklearn.preprocessing import StandardScaler
+from sklearn.metrics import classification_report
 
 # =====================================================================
-# 1. ENTRAÎNEMENT UNIQUE DU MODÈLE IA (Fichier data.csv uniquement)
+# 1. ENTRAÎNEMENT UNIQUE ET ÉVALUATION MÉTRIQUE DU MODÈLE IA
 # =====================================================================
 TRAIN_FILE = "data.csv"
 
 if not os.path.exists(TRAIN_FILE):
     raise FileNotFoundError(f"❌ Erreur critique : Le fichier d'entraînement `{TRAIN_FILE}` est introuvable.")
 
-# Lecture et nettoyage des colonnes
+# Lecture et nettoyage des colonnes du fichier data.csv
 df_base = pd.read_csv(TRAIN_FILE, sep=';')
 df_base.columns = df_base.columns.str.strip()
 
 criteres_ia = ['attendance_pct', 'absence_hours', 'homework_pct', 'study_hours_per_week', 'midterm_score']
 X = df_base[criteres_ia]
-y = df_base['pass']
+
+# Nettoyage de la variable cible (Extrait uniquement le premier chiffre trouvé : 0 ou 1)
+y = df_base['pass'].astype(str).str.extract(r'(\d)')[0].astype(int)
+
+# Découpage initial stratifié (80% Train, 20% Test externe)
+X_train_raw, X_val_raw, y_train, y_val = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
 # Standardisation des caractéristiques
 scaler = StandardScaler()
-X_scaled = scaler.fit_transform(X)
+X_train_scaled = scaler.fit_transform(X_train_raw)
+X_val_scaled = scaler.transform(X_val_raw)
 
-# Modèle équilibré pour contrer le déséquilibre des classes
+# Déclaration de notre modèle de Régression Logistique équilibré
 model = LogisticRegression(class_weight='balanced', C=1.0, max_iter=1000, random_state=42)
-model.fit(X_scaled, y)
+
+# --- CALCUL DU J_train ET DE LA CROSS-VALIDATION (K-FOLD K=5) ---
+cv_results = cross_validate(
+    model, 
+    scaler.fit_transform(X), 
+    y, 
+    cv=5, 
+    scoring=['neg_log_loss', 'accuracy'], 
+    return_train_score=True
+)
+
+# Extraction des coûts moyens
+j_train_kfolds = -cv_results['train_neg_log_loss'].mean()
+j_cv_kfolds = -cv_results['test_neg_log_loss'].mean()
+accuracy_cv = cv_results['test_accuracy'].mean()
+pourcentage_erreur_cv = (1.0 - accuracy_cv) * 100
+
+# --- CALCUL DU J GLOBAL ---
+X_scaled_full = scaler.fit_transform(X)
+model.fit(X_scaled_full, y)
+
+y_proba_reussite = model.predict_proba(X_scaled_full)[:, 1]
+y_proba_reussite = np.clip(y_proba_reussite, 1e-15, 1 - 1e-15)
+
+m = len(y)
+j_global = - (1 / m) * np.sum(y * np.log(y_proba_reussite) + (1 - y) * np.log(1 - y_proba_reussite))
+
+# --- ENTRAÎNEMENT DU MODÈLE SUR LE JEU DE TEST EXTÉRIEUR POUR LA MATRICE ---
+model_test = LogisticRegression(class_weight='balanced', C=1.0, max_iter=1000, random_state=42)
+model_test.fit(X_train_scaled, y_train)
+y_val_pred = model_test.predict(X_val_scaled)
+
+# Génération du rapport de classification initial
+raw_report = classification_report(y_val, y_val_pred, target_names=['FAIL (0)', 'PASS (1)'])
+
+# Formatage avec indentation exacte
+formatted_report = ""
+for line in raw_report.split('\n'):
+    if any(x in line for x in ['precision', 'FAIL (0)', 'PASS (1)']):
+        formatted_report += "    " + line + "\n"
+
+# =====================================================================
+# AFFICHAGE DU RAPPORT EXACTEMENT SELON VOTRE MODÈLE
+# =====================================================================
+print(" RAPPORT D'EFFICACITÉ DE L'ALGORITHME (LOGISTIC REGRESSION)")
+print("============================================================")
+print(f"🎯 J GLOBAL (Fonction de Coût Totale - LogLoss) : {j_global:.4f}")
+print(f"🔹 J_train  (Coût d'Entraînement Moyen - LogLoss) : {j_train_kfolds:.4f}")
+print(f"🔹 J_CV     (Coût de Validation Croisée - LogLoss) : {j_cv_kfolds:.4f}")
+print("------------------------------------------------------------")
+print(f"📈 Taux de Précision Globale (CV Accuracy)       : {accuracy_cv * 100:.2f}%")
+print(f"❌ Pourcentage d'Erreur Générale de l'IA          : {pourcentage_erreur_cv:.2f}%   et suivi par :  MATRICE ET MÉTRIQUES DÉTAILLÉES (SUR LE JEU DE TEST EXTÉRIEUR) :")
+print(formatted_report)
+
 
 # =====================================================================
 # 2. CONFIGURATION ET ROUTES DE L'API FASTAPI
@@ -53,7 +114,6 @@ class StudentInput(BaseModel):
 
 @app.post("/predict")
 def predict_student_status(student: StudentInput):
-    # Formatage des données pour le scaler et le modèle
     input_data = pd.DataFrame([[
         student.attendance_pct,
         student.absence_hours,
@@ -64,14 +124,12 @@ def predict_student_status(student: StudentInput):
     
     input_scaled = scaler.transform(input_data)
     
-    # Exécution des prédictions IA
-    prediction_code = int(model.predict(input_scaled)[0])  # 1 = PASS, 0 = FAIL
+    prediction_code = int(model.predict(input_scaled)[0])
     probabilites = model.predict_proba(input_scaled)[0]
     
     prob_fail = round(probabilites[0] * 100, 2)
     prob_pass = round(probabilites[1] * 100, 2)
     
-    # Détection simultanée et complète de tous les motifs métiers de défaillance
     motifs = []
     if student.absence_hours > 20: 
         motifs.append(f"Volume d'absences critique ({student.absence_hours}h)")
@@ -84,7 +142,6 @@ def predict_student_status(student: StudentInput):
     if student.midterm_score < 60: 
         motifs.append(f"Note globale aux examens d'alerte ({student.midterm_score}/100)")
         
-    # Analyse des insuffisances par matière académique
     matieres = {
         "Informatique": student.informatique, "Mathématiques": student.mathematique,
         "SVT": student.svt, "Physique": student.physique, "Sport": student.sport,
@@ -97,7 +154,6 @@ def predict_student_status(student: StudentInput):
     if not motifs and prediction_code == 0:
         motifs.append("Échec comportemental global déterminé par le modèle d'IA.")
 
-    # Dictionnaire de retour synchronisé au millimètre avec l'interface
     return {
         "student_id": student.student_id,
         "prediction_ia": "PASS" if prediction_code == 1 else "FAIL",
