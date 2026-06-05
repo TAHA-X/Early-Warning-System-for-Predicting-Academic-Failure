@@ -113,4 +113,4 @@ pip install -r requirements.txt
 
 ## 👥 Équipe de Développement
 
-### Asmae HADOUCH & Taha ECHCHOUAL 
+## Asmae HADOUCH & Taha ECHCHOUAL 
