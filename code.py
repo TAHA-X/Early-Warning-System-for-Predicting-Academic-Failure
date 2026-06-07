@@ -80,15 +80,7 @@ for line in raw_report.split('\n'):
 # =====================================================================
 # AFFICHAGE DU RAPPORT EXACTEMENT SELON VOTRE MODÈLE
 # =====================================================================
-print(" RAPPORT D'EFFICACITÉ DE L'ALGORITHME (LOGISTIC REGRESSION)")
-print("============================================================")
-print(f"🎯 J GLOBAL (Fonction de Coût Totale - LogLoss) : {j_global:.4f}")
-print(f"🔹 J_train  (Coût d'Entraînement Moyen - LogLoss) : {j_train_kfolds:.4f}")
-print(f"🔹 J_CV     (Coût de Validation Croisée - LogLoss) : {j_cv_kfolds:.4f}")
-print("------------------------------------------------------------")
-print(f"📈 Taux de Précision Globale (CV Accuracy)       : {accuracy_cv * 100:.2f}%")
-print(f"❌ Pourcentage d'Erreur Générale de l'IA          : {pourcentage_erreur_cv:.2f}%   et suivi par :  MATRICE ET MÉTRIQUES DÉTAILLÉES (SUR LE JEU DE TEST EXTÉRIEUR) :")
-print(formatted_report)
+
 
 
 # =====================================================================
@@ -168,4 +160,4 @@ def predict_student_status(student: StudentInput):
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="127.0.0.1", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8001)

@@ -26,7 +26,7 @@ if "fastapi_started" not in st.session_state:
 
 st.set_page_config(page_title="EWS - Early Warning System", page_icon="🎓", layout="wide")
 
-st.sidebar.title("Taha ECHCHOUAL && Asmae HADOUCH - ML/DL")
+st.sidebar.title("Asmae HADOUCH && Taha ECHCHOUAL  - ML/DL")
 st.sidebar.badge("encadré par prof : mohammadi")
 page = st.sidebar.radio("Aller vers :", ["📊 Statistiques Globales", "🤖 Diagnostic & Inscription", "🚨 Cellule d'Alerte & Risques"])
 
@@ -38,7 +38,7 @@ if page == "📊 Statistiques Globales":
     st.write("Analyse descriptive de la promotion actuelle issue de `etudiants.csv` via l'API.")
     st.divider()
 
-    st.markdown("### 📥 Importation de données externes (.xlsx, .xls, .txt)")
+    st.markdown("### 📥 Importation de données externes")
     col_file, col_opt = st.columns([2, 1])
     
     with col_file:
