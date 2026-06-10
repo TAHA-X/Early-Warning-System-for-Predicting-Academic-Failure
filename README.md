@@ -1,8 +1,8 @@
-# 🎓 Système de Détection Préventive & Diagnostic du Décrochage Scolaire
+# Système de Détection Préventive & Diagnostic du Décrochage Scolaire
 
 Ce projet est une solution complète d'aide à la décision pour les établissements scolaires. Il combine l'analyse de données, le **Machine Learning** pour le calcul du risque d'échec, et une architecture moderne **API-First** (FastAPI) connectée à un **Dashboard interactif** (Streamlit). Le système permet de détecter de manière proactive les élèves en situation de décrochage afin de planifier des actions correctives.
 
-## 🔥 Fonctionnalités Principales
+## Fonctionnalités Principales
 
 * **Mode API-First :** Séparation stricte entre le moteur d'intelligence artificielle (FastAPI) et l'interface utilisateur.
 * **Importation Dynamique :** Possibilité d'importer directement de nouveaux fichiers de données (`.xlsx`, `.xls`, `.txt`) pour mettre à jour la base ou remplacer complètement le fichier existant.
@@ -13,7 +13,7 @@ Ce projet est une solution complète d'aide à la décision pour les établissem
 
 ---
 
-## 📸 Aperçu du Dashboard (Interface Utilisateur)
+## Aperçu du Dashboard (Interface Utilisateur)
 
 ### 📊 Page 1 : Statistiques Globales & Importation
 Cette première page permet de charger de nouvelles données au format Excel ou texte pour enrichir la base de l'API. Elle affiche instantanément les indicateurs clés de la promotion (KPIs) ainsi que les graphiques de distribution.
@@ -51,7 +51,7 @@ Directement sous le tableau de la page 3, un graphique en barres permet d'identi
 
 ---
 
-### 🔍 Focus : Fiche de Diagnostic Détaillée (Pop-up API)
+### Focus : Fiche de Diagnostic Détaillée (Pop-up API)
 Lorsqu'on inspecte un profil critique spécifique, l'API transmits une fiche complète. En plus des notes, elle explicite clairement les **facteurs métiers déclencheurs** (ex: volume d'absences trop élevé, matière critique affectant le score).
 
 <img width="1247" height="837" alt="img5_r" src="https://github.com/user-attachments/assets/f12dc48e-6d29-41e3-92ac-25bc7961088a" />
@@ -59,13 +59,13 @@ Lorsqu'on inspecte un profil critique spécifique, l'API transmits une fiche com
 *Figure 5 : Fenêtre de détails explicitant les causes du danger de décrochage pour un profil ciblé.*
 
 
-### 🔍 Navbar : 3 liens de navigations
+### Navbar : 3 liens de navigations
 
 <img width="405" height="832" alt="Capture d&#39;écran 2026-06-11 003315" src="https://github.com/user-attachments/assets/f9aea091-7bb0-4e48-852e-6be94494192f" />
 
 ---
 
-## 🧠 Performances & Métriques de l'IA
+## Performances & Métriques de l'IA
 
 Pour valider scientifiquement notre moteur prédictif avant son déploiement, l'algorithme a été évalué en Validation Croisée (K-Fold, $K=5$) et sur un jeu de test externe masqué. Voici le rapport généré par notre script d'entraînement :
 
@@ -89,10 +89,10 @@ Algorithme utilisé : Logistic Regression
 ## 💡 L'écart minime entre J_train (0.1729) et J_CV (0.1783) confirme que le modèle généralise bien — il ne mémorise pas les données d'entraînement mais apprend des patterns réels.
 
 
-## 🧪 Rapport de Classification — Jeu de Test Extérieur
+## Rapport de Classification — Jeu de Test Extérieur
 ClassePrécisionRappelF1-ScoreSupport❌ Fail (0)0.880.850.86264✅ Pass (1)0.930.940.94546
 
-## 🔍 Lecture détaillée par classe
+## Lecture détaillée par classe
 ❌ Classe Fail (0) — F1 : 0.86
 
 Précision 0.88 : Quand le modèle prédit un échec, il a raison dans 88% des cas — peu de fausses alarmes.
@@ -107,7 +107,7 @@ La classe majoritaire (546 cas) est très bien apprise, avec un F1 de 0.94 qui t
 
 ---
 
-## 🛠️ Architecture Technique
+## Architecture Technique
 
 Le projet est découpé en deux composants autonomes communicant par requêtes HTTP (JSON) :
 
