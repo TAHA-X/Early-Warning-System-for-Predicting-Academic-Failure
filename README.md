@@ -27,7 +27,7 @@ Cette première page permet de charger de nouvelles données au format Excel ou 
 ### 📝 Page 2 : Assistant de Diagnostic & Inscription
 Cette interface contient un formulaire dynamique composé de curseurs (sliders) permettant de saisir le comportement (présence, devoirs rendus, heures d'étude) et les notes par matière d'un étudiant pour l'enregistrer et interroger l'API en direct.
 
-<img width="1740" height="813" alt="img2_r" src="https://github.com/user-attachments/assets/4cabe1d7-2828-47e2-ac15-b16d692ee52e" />
+<img width="1602" height="821" alt="Capture d&#39;écran 2026-06-11 001841" src="https://github.com/user-attachments/assets/44362643-4350-4eec-9400-e13f9f806f3d" />
 
 *Figure 2 : Formulaire de simulation et d'inscription d'un nouvel étudiant (Mode API).*
 
@@ -64,33 +64,37 @@ Lorsqu'on inspecte un profil critique spécifique, l'API transmits une fiche com
 
 Pour valider scientifiquement notre moteur prédictif avant son déploiement, l'algorithme a été évalué en Validation Croisée (K-Fold, $K=5$) et sur un jeu de test externe masqué. Voici le rapport généré par notre script d'entraînement :
 
-<img width="638" height="293" alt="Capture d&#39;écran 2026-06-04 233409" src="https://github.com/user-attachments/assets/27bc2cae-1c78-47d0-a3b0-3b31822ca639" />
+<img width="1602" height="821" alt="Capture d&#39;écran 2026-06-11 001841" src="https://github.com/user-attachments/assets/214433d8-d9c7-4f58-83ac-17c4e23f86d0" />
 
 *Figure 6 : Capture d'écran des métriques de performance et de coût de l'algorithme.*
 
-### 🔍 Interprétation Technique des Résultats
+### 📊 Résultats & Interprétation du Modèle
 
-#### 1. Fonctions de Coût ($LogLoss$)
-La $LogLoss$ évalue la pénalité des erreurs de probabilité. Plus elle est proche de $0$, plus le modèle est performant et confiant dans ses choix.
-* **$J_{\text{GLOBAL}}$ (0.0977) :** Représente l'erreur globale sur l'ensemble de la base.
-* **$J_{\text{train}}$ (0.0973) vs $J_{\text{CV}}$ (0.1029) :** L'écart extrêmement faible entre le coût d'entraînement et le coût de validation croisée prouve mathématiquement l'**absence de surapprentissage (overfitting)**. Notre modèle possède une excellente capacité de généralisation sur de futurs étudiants inconnus.
+Algorithme utilisé : Logistic Regression
+Évaluation : Entraînement · Validation Croisée · Jeu de Test Extérieur
 
-#### 2. Précision Globale vs Erreur
-* **Taux de Précision Globale (CV Accuracy) : 98.98%** – L'algorithme classe correctement près de 99 étudiants sur 100 lors des tests croisés.
-* **Pourcentage d'Erreur Générale de l'IA : 1.02%** – Le taux d'échec résiduel de la prédiction est minime, ce qui fiabilise grandement l'outil d'aide à la décision.
 
-#### 3. Analyse fine de la Matrice de Classification
-Le rapport segmente les performances selon les deux profils réels rencontrés (*support* indique l'effectif testé : 117 cas réels de FAIL, 177 cas réels de PASS) :
+## 🎯 Performance Globale
+MétriqueValeurInterprétationJ Global (LogLoss total)0.1749Coût moyen très bas — le modèle est bien calibré et confiant dans ses prédictionsJ_train (Coût entraînement)0.1729Apprentissage efficace, aucun sous-apprentissage détectéJ_CV (Coût validation croisée)0.1783Très proche de J_train → pas de surapprentissage (overfitting)CV Accuracy91.23% ✅L'IA classe correctement 9 cas sur 10 sur des données inéditesTaux d'erreur8.77%Marge d'erreur résiduelle faible, attendue sur données réelles
 
-* **Classe `FAIL (0)` (Profils en situation de décrochage) :**
-  * **Précision (0.97) :** Lorsque l'IA signale qu'un élève va échouer, elle voit juste dans **97%** des cas.
-  * **Rappel / Recall (1.00) :** C'est la métrique clé de notre objectif préventif. Le score parfait de **100%** garantit qu'**aucun élève en situation de décrochage n'échappe à la vigilance du système**.
+## 💡 L'écart minime entre J_train (0.1729) et J_CV (0.1783) confirme que le modèle généralise bien — il ne mémorise pas les données d'entraînement mais apprend des patterns réels.
 
-* **Classe `PASS (1)` (Profils en situation de réussite) :**
-  * **Précision (1.00) :** Lorsque le modèle prédit la réussite d'un étudiant, sa certitude est absolue (**100%**).
-  * **Rappel / Recall (0.98) :** L'IA identifie correctement 98% de la population globale qui va valider son parcours.
 
-* **F1-Score (0.99) :** Moyenne harmonique de la précision et du rappel, cette valeur confirme la robustesse et l'équilibre optimal du modèle sur l'ensemble des cas de figure de l'établissement scolaire.
+## 🧪 Rapport de Classification — Jeu de Test Extérieur
+ClassePrécisionRappelF1-ScoreSupport❌ Fail (0)0.880.850.86264✅ Pass (1)0.930.940.94546
+
+## 🔍 Lecture détaillée par classe
+❌ Classe Fail (0) — F1 : 0.86
+
+Précision 0.88 : Quand le modèle prédit un échec, il a raison dans 88% des cas — peu de fausses alarmes.
+Rappel 0.85 : Il détecte 85% des vrais échecs — quelques cas critiques peuvent passer inaperçus (15% de faux négatifs).
+⚠️ C'est la classe minoritaire (264 cas vs 546), ce qui explique un score légèrement inférieur. À surveiller si le coût d'un faux négatif est élevé dans le contexte métier.
+
+✅ Classe Pass (1) — F1 : 0.94
+
+Précision 0.93 : 93% des prédictions "Pass" sont correctes.
+Rappel 0.94 : Le modèle identifie 94% des vrais succès — performance excellente.
+La classe majoritaire (546 cas) est très bien apprise, avec un F1 de 0.94 qui témoigne d'un équilibre précision/rappel solide.
 
 ---
 
