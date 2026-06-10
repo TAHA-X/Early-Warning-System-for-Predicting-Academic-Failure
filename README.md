@@ -61,7 +61,7 @@ Lorsqu'on inspecte un profil critique spécifique, l'API transmits une fiche com
 
 ### 🔍 Navbar : 3 liens de navigations
 
-                          <img width="405" height="832" alt="Capture d&#39;écran 2026-06-11 003315" src="https://github.com/user-attachments/assets/f9aea091-7bb0-4e48-852e-6be94494192f" />
+<img width="405" height="832" alt="Capture d&#39;écran 2026-06-11 003315" src="https://github.com/user-attachments/assets/f9aea091-7bb0-4e48-852e-6be94494192f" />
 
 ---
 
