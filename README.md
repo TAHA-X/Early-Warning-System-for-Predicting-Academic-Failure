@@ -75,11 +75,11 @@ Algorithme utilisé : Logistic Regression
 
 
 ## 🎯 Performance Globale
-# J Global (LogLoss total) 0.1749Coût moyen très bas — le modèle est bien calibré et confiant dans ses prédictions
-# J_train (Coût entraînement) 0.1729  Apprentissage efficace
-# J_CV (Coût validation croisée) 0.1783 Très proche de J_train → pas de surapprentissage (overfitting)
-# CV Accuracy 91.23% L'IA classe correctement 9 cas sur 10 sur des données 
-# Taux d'erreur 8.77% Marge d'erreur résiduelle faible, attendue sur données réelles
+#### J Global (LogLoss total) 0.1749Coût moyen très bas — le modèle est bien calibré et confiant dans ses prédictions
+#### J_train (Coût entraînement) 0.1729  Apprentissage efficace
+#### J_CV (Coût validation croisée) 0.1783 Très proche de J_train → pas de surapprentissage (overfitting)
+#### CV Accuracy 91.23% L'IA classe correctement 9 cas sur 10 sur des données 
+#### Taux d'erreur 8.77% Marge d'erreur résiduelle faible, attendue sur données réelles
 
 ## 💡 L'écart minime entre J_train (0.1729) et J_CV (0.1783) confirme que le modèle généralise bien — il ne mémorise pas les données d'entraînement mais apprend des patterns réels.
 
@@ -116,9 +116,8 @@ Le projet est découpé en deux composants autonomes communicant par requêtes H
 ### 1. Prérequis & Installation des dépendances
 Clonez le projet, créez un environnement virtuel, puis installez les bibliothèques requises :
 
-```bash
 pip install -r requirements.txt
 
-## 👥 Équipe de Développement
+### 👥 Équipe de Développement
 
 ## Asmae HADOUCH & Taha ECHCHOUAL 
