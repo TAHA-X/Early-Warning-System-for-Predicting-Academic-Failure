@@ -64,7 +64,7 @@ Lorsqu'on inspecte un profil critique spécifique, l'API transmits une fiche com
 
 Pour valider scientifiquement notre moteur prédictif avant son déploiement, l'algorithme a été évalué en Validation Croisée (K-Fold, $K=5$) et sur un jeu de test externe masqué. Voici le rapport généré par notre script d'entraînement :
 
-<img width="1602" height="821" alt="Capture d&#39;écran 2026-06-11 001841" src="https://github.com/user-attachments/assets/214433d8-d9c7-4f58-83ac-17c4e23f86d0" />
+<img width="647" height="343" alt="stat" src="https://github.com/user-attachments/assets/12ea06ff-bf9e-4ea2-9d4d-f09231fc278a" />
 
 *Figure 6 : Capture d'écran des métriques de performance et de coût de l'algorithme.*
 
@@ -75,7 +75,11 @@ Algorithme utilisé : Logistic Regression
 
 
 ## 🎯 Performance Globale
-MétriqueValeurInterprétationJ Global (LogLoss total)0.1749Coût moyen très bas — le modèle est bien calibré et confiant dans ses prédictionsJ_train (Coût entraînement)0.1729Apprentissage efficace, aucun sous-apprentissage détectéJ_CV (Coût validation croisée)0.1783Très proche de J_train → pas de surapprentissage (overfitting)CV Accuracy91.23% ✅L'IA classe correctement 9 cas sur 10 sur des données inéditesTaux d'erreur8.77%Marge d'erreur résiduelle faible, attendue sur données réelles
+# J Global (LogLoss total) 0.1749Coût moyen très bas — le modèle est bien calibré et confiant dans ses prédictions
+# J_train (Coût entraînement) 0.1729  Apprentissage efficace
+# J_CV (Coût validation croisée) 0.1783 Très proche de J_train → pas de surapprentissage (overfitting)
+# CV Accuracy 91.23% L'IA classe correctement 9 cas sur 10 sur des données 
+# Taux d'erreur 8.77% Marge d'erreur résiduelle faible, attendue sur données réelles
 
 ## 💡 L'écart minime entre J_train (0.1729) et J_CV (0.1783) confirme que le modèle généralise bien — il ne mémorise pas les données d'entraînement mais apprend des patterns réels.
 
