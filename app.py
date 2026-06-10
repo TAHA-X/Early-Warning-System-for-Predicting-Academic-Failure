@@ -26,8 +26,8 @@ if "fastapi_started" not in st.session_state:
 
 st.set_page_config(page_title="EWS - Early Warning System", page_icon="🎓", layout="wide")
 
-st.sidebar.title("Asmae HADOUCH && Taha ECHCHOUAL  - ML/DL")
-st.sidebar.badge("encadré par prof : mohammadi")
+st.sidebar.title("Taha ECHCHOUAL && Asmae HADOUCH - ML/DL")
+st.sidebar.badge("encadré par prof : Abdelhak Mahmoudi")
 page = st.sidebar.radio("Aller vers :", ["📊 Statistiques Globales", "🤖 Diagnostic & Inscription", "🚨 Cellule d'Alerte & Risques"])
 
 # =====================================================================
