@@ -181,16 +181,6 @@ data.csv
 | `Error % (CV K=5)` | `(1 - accuracy) × 100` |
 | `J_global (full)` | Loss computed on the full dataset after final training |
 
-### Serialized Bundle (`model.pkl`)
-
-```python
-bundle = {
-    "scaler":   StandardScaler,       # fitted on training data
-    "model":    LogisticRegression,   # trained on full dataset
-    "features": CRITERES_IA           # list of 5 feature names
-}
-```
-
 ---
 
 ## 🔌 API Reference
@@ -276,6 +266,7 @@ The dashboard has **3 pages**, accessible from the sidebar:
 - KPI metrics: total students, average absences, average mid-term score
 - Charts: absence distribution histogram, study hours vs. score scatter plot
 - Full student data table
+<img width="1811" height="882" alt="Capture d&#39;écran 2026-06-14 015324" src="https://github.com/user-attachments/assets/57395383-49f5-403c-a46a-aeb38e277e17" />
 
 ---
 
@@ -288,6 +279,8 @@ The dashboard has **3 pages**, accessible from the sidebar:
   - PASS/FAIL verdict with probability
   - Full list of detected risk motifs
 - Automatically saves the student to `etudiants.csv`
+- 
+<img width="1775" height="757" alt="PAGE2" src="https://github.com/user-attachments/assets/affdf401-1038-475a-b9af-5e0812b9a86d" />
 
 ---
 
@@ -300,6 +293,12 @@ The dashboard has **3 pages**, accessible from the sidebar:
   - Sortable table of at-risk students with failure probability
   - Detailed profile popup per student (grades, absences, risk motifs)
   - **Bar chart**: which subjects have the most failing students
+<img width="1752" height="847" alt="page3" src="https://github.com/user-attachments/assets/0194af46-8908-49b5-99c5-f4a9f9439367" />
+
+<img width="881" height="742" alt="page4" src="https://github.com/user-attachments/assets/5e5a20df-79e9-46f1-8fbe-33fdcca03668" />
+
+<img width="1056" height="647" alt="Capture d&#39;écran 2026-06-14 015829" src="https://github.com/user-attachments/assets/3f99510b-97c6-43eb-af35-4afe76e46cf0" />
+
 
 ---
 
@@ -411,22 +410,6 @@ streamlit run app.py
 
 ---
 
-## 📏 Thresholds & Business Rules
-
-These thresholds are applied by the API to generate diagnostic motifs:
-
-| Indicator | Risk Threshold | Motif Generated |
-|-----------|---------------|-----------------|
-| `absence_hours` | > 20 h | "Volume d'absences critique" |
-| `attendance_pct` | < 75 % | "Taux de présence insuffisant" |
-| `homework_pct` | < 65 % | "Retards répétés sur les devoirs" |
-| `study_hours_per_week` | < 6 h/week | "Temps d'étude personnel trop faible" |
-| `midterm_score` | < 60 / 100 | "Note globale aux examens d'alerte" |
-| Any subject grade | < 50 / 100 | "Insuffisance académique majeure en [Matière]" |
-
-> These thresholds are defined in `api.py` and can be adjusted to match institutional policies.
-
----
 
 ## 📝 Notes
 
