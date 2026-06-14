@@ -181,16 +181,6 @@ data.csv
 | `Error % (CV K=5)` | `(1 - accuracy) × 100` |
 | `J_global (full)` | Loss computed on the full dataset after final training |
 
-### Serialized Bundle (`model.pkl`)
-
-```python
-bundle = {
-    "scaler":   StandardScaler,       # fitted on training data
-    "model":    LogisticRegression,   # trained on full dataset
-    "features": CRITERES_IA           # list of 5 feature names
-}
-```
-
 ---
 
 ## 🔌 API Reference
@@ -420,22 +410,6 @@ streamlit run app.py
 
 ---
 
-## 📏 Thresholds & Business Rules
-
-These thresholds are applied by the API to generate diagnostic motifs:
-
-| Indicator | Risk Threshold | Motif Generated |
-|-----------|---------------|-----------------|
-| `absence_hours` | > 20 h | "Volume d'absences critique" |
-| `attendance_pct` | < 75 % | "Taux de présence insuffisant" |
-| `homework_pct` | < 65 % | "Retards répétés sur les devoirs" |
-| `study_hours_per_week` | < 6 h/week | "Temps d'étude personnel trop faible" |
-| `midterm_score` | < 60 / 100 | "Note globale aux examens d'alerte" |
-| Any subject grade | < 50 / 100 | "Insuffisance académique majeure en [Matière]" |
-
-> These thresholds are defined in `api.py` and can be adjusted to match institutional policies.
-
----
 
 ## 📝 Notes
 
