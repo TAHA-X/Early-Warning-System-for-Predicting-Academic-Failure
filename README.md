@@ -1,128 +1,436 @@
-# Système de Détection Préventive & Diagnostic du Décrochage Scolaire
+# 🎓 Early Warning System (EWS)
+> **Système de Détection Préventive de l'Échec Scolaire par Intelligence Artificielle**
 
-Ce projet est une solution complète d'aide à la décision pour les établissements scolaires. Il combine l'analyse de données, le **Machine Learning** pour le calcul du risque d'échec, et une architecture moderne **API-First** (FastAPI) connectée à un **Dashboard interactif** (Streamlit). Le système permet de détecter de manière proactive les élèves en situation de décrochage afin de planifier des actions correctives.
-
-## Fonctionnalités Principales
-
-* **Mode API-First :** Séparation stricte entre le moteur d'intelligence artificielle (FastAPI) et l'interface utilisateur.
-* **Importation Dynamique :** Possibilité d'importer directement de nouveaux fichiers de données (`.xlsx`, `.xls`, `.txt`) pour mettre à jour la base ou remplacer complètement le fichier existant.
-* **Analyse Descriptive Globale :** Statistiques en temps réel sur la promotion (moyenne des absences, notes de mi-parcours, distributions graphiques).
-* **Formulaire de Diagnostic à la Volée :** Interface interactive pour simuler ou inscrire un nouvel étudiant en saisissant ses notes par matière et son comportement.
-* **Cellule d'Alerte IA :** Identification automatique et instantanée des profils à risque avec calcul de la probabilité d'échec exacte (%).
-* **Fiches de Diagnostic Détaillées :** Analyse sectorielle par étudiant mettant en avant les facteurs métiers déclencheurs transmis par l'API (matières critiques, manque d'implication, absentéisme).
+Developed by **Taha ECHCHOUAL & Asmae HADOUCH** — supervised by **Prof. Abdelhak Mahmoudi**
 
 ---
 
-## Aperçu du Dashboard (Interface Utilisateur)
+## 📌 Table of Contents
 
-### 📊 Page 1 : Statistiques Globales & Importation
-Cette première page permet de charger de nouvelles données au format Excel ou texte pour enrichir la base de l'API. Elle affiche instantanément les indicateurs clés de la promotion (KPIs) ainsi que les graphiques de distribution.
-
-<img width="1552" height="847" alt="img1_r" src="https://github.com/user-attachments/assets/29814176-c6cf-44ed-af4f-a4b17294985b" />
-
-*Figure 1 : Première page du dashboard avec module d'importation et graphiques descriptifs.*
-
----
-
-### 📝 Page 2 : Assistant de Diagnostic & Inscription
-Cette interface contient un formulaire dynamique composé de curseurs (sliders) permettant de saisir le comportement (présence, devoirs rendus, heures d'étude) et les notes par matière d'un étudiant pour l'enregistrer et interroger l'API en direct.
-
-<img width="1602" height="821" alt="Capture d&#39;écran 2026-06-11 001841" src="https://github.com/user-attachments/assets/44362643-4350-4eec-9400-e13f9f806f3d" />
-
-*Figure 2 : Formulaire de simulation et d'inscription d'un nouvel étudiant (Mode API).*
+- [Overview](#-overview)
+- [Architecture](#-architecture)
+- [Project Structure](#-project-structure)
+- [Data](#-data)
+- [AI Model](#-ai-model)
+- [API Reference](#-api-reference)
+- [Streamlit Dashboard](#-streamlit-dashboard)
+- [Development Environment Setup](#-development-environment-setup)
+- [Running the Project](#-running-the-project)
+- [Thresholds & Business Rules](#-thresholds--business-rules)
 
 ---
 
-### 🚨 Page 3 : Cellule de Détection Préventive (Vue d'ensemble)
-Cette section liste de manière épurée l'ensemble des profils jugés "défaillants" par le modèle prédictif. Le tableau met en évidence l'ID de l'étudiant, sa probabilité d'échec précise et son volume d'absences.
+## 🧭 Overview
 
-<img width="1578" height="853" alt="img3_r" src="https://github.com/user-attachments/assets/a96978b0-c5fc-4b1a-b0a7-d052d9369c66" />
+The **Early Warning System (EWS)** is a machine-learning-powered web application that predicts whether a student is at risk of **failing** or likely to **pass**, based on behavioral and academic indicators.
 
-*Figure 3 : Tableau récapitulatif des profils à risque identifiés par l'IA.*
-
----
-
-### 📉 Page 3 : Analyse Sectorielle des Matières Critiques
-Directement sous le tableau de la page 3, un graphique en barres permet d'identifier visuellement quelles sont les matières qui mettent le plus la promotion en péril (nombre d'étudiants en situation d'échec par bloc d'enseignement).
-
-<img width="1573" height="688" alt="img4_r" src="https://github.com/user-attachments/assets/6aabdae5-9a55-4980-8d0a-5242c5d521e0" />
-
-*Figure 4 : Statistiques sous format de graphe identifiant les matières critiques de la promotion.*
+The system provides:
+- 🤖 **AI-based prediction** (PASS / FAIL) with probability scores
+- 📋 **Diagnostic reports** listing specific risk factors per student
+- 📊 **Statistical dashboard** with visualizations of the entire class
+- 🚨 **Alert cell** listing all at-risk students with detailed profiles
 
 ---
 
-### Focus : Fiche de Diagnostic Détaillée (Pop-up API)
-Lorsqu'on inspecte un profil critique spécifique, l'API transmits une fiche complète. En plus des notes, elle explicite clairement les **facteurs métiers déclencheurs** (ex: volume d'absences trop élevé, matière critique affectant le score).
+## 🏗 Architecture
 
-<img width="1247" height="837" alt="img5_r" src="https://github.com/user-attachments/assets/f12dc48e-6d29-41e3-92ac-25bc7961088a" />
+```
+┌─────────────────────────────────────────────────────────┐
+│                      User (Browser)                     │
+└────────────────────────┬────────────────────────────────┘
+                         │
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│              app.py  —  Streamlit Frontend              │
+│   Page 1: Global Stats  │  Page 2: Diagnosis  │  Page 3: Alerts │
+└────────────────────────┬────────────────────────────────┘
+                         │  HTTP POST /predict
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│              api.py  —  FastAPI Backend                 │
+│         Route: POST /predict (StudentInput)             │
+└────────────────────────┬────────────────────────────────┘
+                         │  loads
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│          model.pkl  —  Serialized ML Bundle             │
+│      StandardScaler  +  LogisticRegression              │
+└────────────────────────┬────────────────────────────────┘
+                         │  trained on
+                         ▼
+┌─────────────────────────────────────────────────────────┐
+│              data.csv  —  Training Dataset              │
+└─────────────────────────────────────────────────────────┘
+```
 
-*Figure 5 : Fenêtre de détails explicitant les causes du danger de décrochage pour un profil ciblé.*
-
-
-### Navbar : 3 liens de navigations
-
-<img width="405" height="832" alt="Capture d&#39;écran 2026-06-11 003315" src="https://github.com/user-attachments/assets/f9aea091-7bb0-4e48-852e-6be94494192f" />
-
----
-
-## Performances & Métriques de l'IA
-
-Pour valider scientifiquement notre moteur prédictif avant son déploiement, l'algorithme a été évalué en Validation Croisée (K-Fold, $K=5$) et sur un jeu de test externe masqué. Voici le rapport généré par notre script d'entraînement :
-
-<img width="647" height="343" alt="stat" src="https://github.com/user-attachments/assets/12ea06ff-bf9e-4ea2-9d4d-f09231fc278a" />
-
-*Figure 6 : Capture d'écran des métriques de performance et de coût de l'algorithme.*
-
-### 📊 Résultats & Interprétation du Modèle
-
-Algorithme utilisé : Logistic Regression
-Évaluation : Entraînement · Validation Croisée · Jeu de Test Extérieur
-
-
-## 🎯 Performance Globale
-#### J Global (LogLoss total) 0.1749Coût moyen très bas — le modèle est bien calibré et confiant dans ses prédictions
-#### J_train (Coût entraînement) 0.1729  Apprentissage efficace
-#### J_CV (Coût validation croisée) 0.1783 Très proche de J_train → pas de surapprentissage (overfitting)
-#### CV Accuracy 91.23% L'IA classe correctement 9 cas sur 10 sur des données 
-#### Taux d'erreur 8.77% Marge d'erreur résiduelle faible, attendue sur données réelles
-
-## 💡 L'écart minime entre J_train (0.1729) et J_CV (0.1783) confirme que le modèle généralise bien — il ne mémorise pas les données d'entraînement mais apprend des patterns réels.
-
-
-## Rapport de Classification — Jeu de Test Extérieur
-ClassePrécisionRappelF1-ScoreSupport❌ Fail (0)0.880.850.86264✅ Pass (1)0.930.940.94546
-
-## Lecture détaillée par classe
-❌ Classe Fail (0) — F1 : 0.86
-
-Précision 0.88 : Quand le modèle prédit un échec, il a raison dans 88% des cas — peu de fausses alarmes.
-Rappel 0.85 : Il détecte 85% des vrais échecs — quelques cas critiques peuvent passer inaperçus (15% de faux négatifs).
-⚠️ C'est la classe minoritaire (264 cas vs 546), ce qui explique un score légèrement inférieur. À surveiller si le coût d'un faux négatif est élevé dans le contexte métier.
-
-✅ Classe Pass (1) — F1 : 0.94
-
-Précision 0.93 : 93% des prédictions "Pass" sont correctes.
-Rappel 0.94 : Le modèle identifie 94% des vrais succès — performance excellente.
-La classe majoritaire (546 cas) est très bien apprise, avec un F1 de 0.94 qui témoigne d'un équilibre précision/rappel solide.
+The Streamlit frontend launches the FastAPI server **automatically in a background thread** on startup (port `8000`).
 
 ---
 
-## Architecture Technique
+## 📁 Project Structure
 
-Le projet est découpé en deux composants autonomes communicant par requêtes HTTP (JSON) :
-
-1. **Le Backend (API) :** Développé avec **FastAPI**. Il charge le modèle de Machine Learning préalablement entraîné (`Logistic Regression` / `Scikit-Learn`), valide les données entrantes avec `Pydantic` et effectue les prédictions de probabilité d'échec en tâche de fond.
-2. **Le Frontend (Dashboard) :** Développé en **Streamlit**. Il offre une interface fluide et moderne, interroge l'API pour chaque calcul et s'occupe de la visualisation de données (`Plotly` / `Altair`).
+```
+early-warning-system/
+│
+├── app.py            # Streamlit frontend (3-page dashboard)
+├── api.py            # FastAPI prediction API
+├── model.py          # Model training, evaluation & serialization
+│
+├── data.csv          # Training dataset (labeled, separator = ';')
+├── etudiants.csv     # Runtime student database (generated by app)
+├── model.pkl         # Serialized ML bundle (scaler + model)
+│
+└── EDA1.ipynb        # Exploratory Data Analysis notebook
+```
 
 ---
 
-## 🚀 Installation et Lancement
+## 📊 Data
 
-### 1. Prérequis & Installation des dépendances
-Clonez le projet, créez un environnement virtuel, puis installez les bibliothèques requises :
+### `data.csv` — Training Dataset
 
+Separator: **semicolon (`;`)**
+
+| Column | Type | Description |
+|--------|------|-------------|
+| `student_id` | int | Unique student identifier |
+| `attendance_pct` | float | Overall attendance rate (%) |
+| `absence_hours` | float | Total hours of absence |
+| `homework_pct` | float | Percentage of homework submitted (%) |
+| `study_hours_per_week` | float | Self-study hours per week |
+| `midterm_score` | float | Mid-term exam score (out of 100) |
+| `informatique` | float | Grade in Computer Science (/100) |
+| `mathematique` | float | Grade in Mathematics (/100) |
+| `svt` | float | Grade in Life & Earth Sciences (/100) |
+| `physique` | float | Grade in Physics (/100) |
+| `sport` | float | Grade in Physical Education (/100) |
+| `education_islamique` | float | Grade in Islamic Education (/100) |
+| `francais` | float | Grade in French (/100) |
+| `arabe` | float | Grade in Arabic (/100) |
+| `pass` | int | **Target label**: `1` = PASS, `0` = FAIL |
+
+### `etudiants.csv` — Runtime Database
+
+Same structure as `data.csv`. Generated and updated dynamically by the Streamlit app when students are enrolled or imported.
+
+---
+
+## 🤖 AI Model
+
+### Features Used for Prediction
+
+The model uses only **5 behavioral features** (not grades):
+
+```python
+CRITERES_IA = [
+    "attendance_pct",
+    "absence_hours",
+    "homework_pct",
+    "study_hours_per_week",
+    "midterm_score",
+]
+```
+
+> Grades per subject are used only for **diagnostic reporting**, not for the ML prediction itself.
+
+### Training Pipeline (`model.py`)
+
+```
+data.csv
+   │
+   ▼
+1. Load & clean  →  extract features X and label y
+   │
+   ▼
+2. Stratified Split  →  80% train / 20% validation
+   │
+   ▼
+3. StandardScaler  →  normalize features (mean=0, std=1)
+   │
+   ▼
+4. Cross-Validation (K=5)  →  evaluate J_train, J_cv, Accuracy
+   │
+   ▼
+5. Train on full dataset  →  compute J_global
+   │
+   ▼
+6. Classification report  →  precision / recall on 20% validation set
+   │
+   ▼
+7. Serialize  →  model.pkl  { scaler, model, features }
+```
+
+### Algorithm
+
+| Parameter | Value |
+|-----------|-------|
+| Algorithm | `LogisticRegression` (scikit-learn) |
+| Class weight | `balanced` (handles class imbalance) |
+| Regularization C | `1.0` |
+| Max iterations | `1000` |
+| Cross-validation | `K = 5` folds |
+| Random state | `42` |
+
+### Metrics Reported
+
+| Metric | Description |
+|--------|-------------|
+| `J_train (CV K=5)` | Average training loss across 5 folds |
+| `J_cv (CV K=5)` | Average validation loss across 5 folds |
+| `Accuracy (CV K=5)` | Average accuracy across 5 folds |
+| `Error % (CV K=5)` | `(1 - accuracy) × 100` |
+| `J_global (full)` | Loss computed on the full dataset after final training |
+
+### Serialized Bundle (`model.pkl`)
+
+```python
+bundle = {
+    "scaler":   StandardScaler,       # fitted on training data
+    "model":    LogisticRegression,   # trained on full dataset
+    "features": CRITERES_IA           # list of 5 feature names
+}
+```
+
+---
+
+## 🔌 API Reference
+
+**Base URL:** `http://127.0.0.1:8000`  
+**Framework:** FastAPI  
+**File:** `api.py`
+
+---
+
+### `POST /predict`
+
+Predicts whether a student will PASS or FAIL and returns a full diagnostic.
+
+#### Request Body
+
+```json
+{
+  "student_id":            "101",
+  "attendance_pct":        85.0,
+  "absence_hours":         12.0,
+  "homework_pct":          78.0,
+  "study_hours_per_week":  8.0,
+  "midterm_score":         70.0,
+  "informatique":          75.0,
+  "mathematique":          60.0,
+  "svt":                   55.0,
+  "physique":              48.0,
+  "sport":                 90.0,
+  "education_islamique":   65.0,
+  "francais":              72.0,
+  "arabe":                 68.0
+}
+```
+
+> **Note:** Subject grades (`informatique`, `mathematique`, etc.) are **optional** (default `0.0`). Only the 5 behavioral fields are required for the AI prediction.
+
+#### Response Body
+
+```json
+{
+  "student_id":             "101",
+  "prediction_ia":          "PASS",
+  "pass_binary":            1,
+  "probabilite_reussite":   "73.42%",
+  "probabilite_echec":      "26.58%",
+  "risque_valeur":          26.58,
+  "diagnostic_administration": {
+    "motifs_du_danger": [
+      "Insuffisance académique majeure en Physique (48.0/100)"
+    ]
+  }
+}
+```
+
+#### Response Fields
+
+| Field | Type | Description |
+|-------|------|-------------|
+| `prediction_ia` | string | `"PASS"` or `"FAIL"` |
+| `pass_binary` | int | `1` = PASS, `0` = FAIL |
+| `probabilite_reussite` | string | Probability of passing (%) |
+| `probabilite_echec` | string | Probability of failing (%) |
+| `risque_valeur` | float | Numeric failure probability (for sorting/filtering) |
+| `diagnostic_administration.motifs_du_danger` | list | List of detected risk factors |
+
+---
+
+## 🖥 Streamlit Dashboard
+
+**File:** `app.py`  
+**URL:** `http://localhost:8501`
+
+The dashboard has **3 pages**, accessible from the sidebar:
+
+---
+
+### Page 1 — 📊 Statistiques Globales
+
+- Import students from **Excel (`.xlsx`)** or **text (`.txt`)** file
+- Two import modes: **append** to existing data or **replace** completely
+- Automatic batch prediction via API on import
+- KPI metrics: total students, average absences, average mid-term score
+- Charts: absence distribution histogram, study hours vs. score scatter plot
+- Full student data table
+
+---
+
+### Page 2 — 🤖 Diagnostic & Inscription
+
+- Manual form to enroll a **single student**
+- Fields: ID, attendance %, absence hours, homework %, study hours, mid-term score, all 8 subject grades
+- Sends data to `/predict` API
+- Displays a **popup dialog** with:
+  - PASS/FAIL verdict with probability
+  - Full list of detected risk motifs
+- Automatically saves the student to `etudiants.csv`
+
+---
+
+### Page 3 — 🚨 Cellule d'Alerte & Risques
+
+- Scans **all students** in `etudiants.csv` through the API
+- Lists only students predicted as **FAIL**
+- Displays:
+  - KPI: total students vs. at-risk count
+  - Sortable table of at-risk students with failure probability
+  - Detailed profile popup per student (grades, absences, risk motifs)
+  - **Bar chart**: which subjects have the most failing students
+
+---
+
+## ⚙️ Development Environment Setup
+
+### Prerequisites
+
+| Tool | Minimum Version |
+|------|----------------|
+| Python | 3.10+ |
+| pip | 23+ |
+
+### 1. Clone the repository
+
+```bash
+git clone https://github.com/your-repo/early-warning-system.git
+cd early-warning-system
+```
+
+### 2. Create a virtual environment
+
+```bash
+# Create
+python -m venv venv
+
+# Activate — Windows
+venv\Scripts\activate
+
+# Activate — macOS / Linux
+source venv/bin/activate
+```
+
+### 3. Install dependencies
+
+```bash
 pip install -r requirements.txt
+```
 
-### 👥 Équipe de Développement
+**`requirements.txt`:**
 
-## Asmae HADOUCH & Taha ECHCHOUAL 
+```
+streamlit>=1.32.0
+fastapi>=0.110.0
+uvicorn>=0.29.0
+scikit-learn>=1.4.0
+pandas>=2.2.0
+numpy>=1.26.0
+plotly>=5.20.0
+requests>=2.31.0
+pydantic>=2.6.0
+openpyxl>=3.1.0
+```
+
+### 4. Train the model (generates `model.pkl`)
+
+```bash
+python model.py
+```
+
+Expected output:
+```
+============================================================
+  RAPPORT D'ÉVALUATION DU MODÈLE IA
+============================================================
+  J_train  (CV K=5)  : 0.XXXX
+  J_cv     (CV K=5)  : 0.XXXX
+  Accuracy (CV K=5)  : XX.XX%
+  Erreur   (CV K=5)  : XX.XX%
+  J_global (full)    : 0.XXXX
+
+  Classification (jeu de validation 20%) :
+    precision    recall  f1-score
+    ...
+============================================================
+✅ Modèle sauvegardé → model.pkl
+```
+
+---
+
+## 🚀 Running the Project
+
+### Option A — Full app (recommended)
+
+The Streamlit app **automatically starts the FastAPI server** in a background thread. Just run:
+
+```bash
+streamlit run app.py
+```
+
+Then open: **http://localhost:8501**
+
+---
+
+### Option B — Run services separately
+
+**Terminal 1 — FastAPI backend:**
+```bash
+python api.py
+# → API running at http://127.0.0.1:8002
+```
+
+**Terminal 2 — Streamlit frontend:**
+```bash
+streamlit run app.py
+# → Dashboard at http://localhost:8501
+```
+
+> ⚠️ If running separately, update `API_URL` in `app.py` to match the correct port.
+
+---
+
+## 📏 Thresholds & Business Rules
+
+These thresholds are applied by the API to generate diagnostic motifs:
+
+| Indicator | Risk Threshold | Motif Generated |
+|-----------|---------------|-----------------|
+| `absence_hours` | > 20 h | "Volume d'absences critique" |
+| `attendance_pct` | < 75 % | "Taux de présence insuffisant" |
+| `homework_pct` | < 65 % | "Retards répétés sur les devoirs" |
+| `study_hours_per_week` | < 6 h/week | "Temps d'étude personnel trop faible" |
+| `midterm_score` | < 60 / 100 | "Note globale aux examens d'alerte" |
+| Any subject grade | < 50 / 100 | "Insuffisance académique majeure en [Matière]" |
+
+> These thresholds are defined in `api.py` and can be adjusted to match institutional policies.
+
+---
+
+## 📝 Notes
+
+- `data.csv` and `etudiants.csv` both use **semicolon (`;`)** as separator.
+- The `pass` column in `data.csv` must contain integer values (`0` or `1`).
+- `model.pkl` must exist before starting the API. Run `python model.py` first if it is missing.
+- The app launches FastAPI on port `8000` internally; `api.py` standalone uses port `8002`.
